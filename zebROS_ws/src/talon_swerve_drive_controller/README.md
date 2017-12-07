@@ -1,5 +1,5 @@
-## Diff Drive Controller ##
+## Swerve Drive Controller ##
 
-Controller for a differential drive mobile base.
+Controller for a swerve drive mobile base.
 
-Detailed user documentation can be found in the controller's [ROS wiki page](http://wiki.ros.org/diff_drive_controller).
+Detailed user documentation can be found on chief delphi. 

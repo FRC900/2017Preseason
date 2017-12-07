@@ -48,6 +48,10 @@
 
 #include <talon_swerve_drive_controller/swerve_drive_controller.h>
 
+#include <Eigen/Dense>
+
+//TODO: include swerve stuff from C-Control
+using namespace Eigen::Vector2d;
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {
   return std::sqrt(std::pow(vec1.x-vec2.x,2) +
@@ -107,6 +111,9 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
  * \brief Check if the link is modeled as a sphere
  * \param link Link
  * \return true if the link is modeled as a Sphere; false otherwise
+ *
+ * \param link Link
+ * \return true if the link is modeled as a Sphere; false otherwise
  */
 static bool isSphere(const urdf::LinkConstSharedPtr& link)
 {
@@ -146,6 +153,7 @@ static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& w
   ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder or sphere!");
   return false;
 }
+//generates default set of coords for below
 array<Vector2d, WHEELCOUNT> def_wheel_coords;
 for(int i = 0; i < WHEELCOUNT; i++)
 {
@@ -366,6 +374,7 @@ namespace talon_swerve_drive_controller{
     Commands curr_cmd = *(command_.readFromRT());
     const double dt = (time - curr_cmd.stamp).toSec();
 
+    //TODO command should be changed to a twist msg or similar
     // Brake if cmd_vel has timeout:
     if (dt > cmd_vel_timeout_)
     {
@@ -380,6 +389,8 @@ namespace talon_swerve_drive_controller{
 
 
     // Compute wheels velocities:
+    //Parse curr_cmd to get velocity vector and rotation (z axis)
+    //TODO: check unit conversions/coordinate frames
     vector<Vector2d, WHEELCOUNT> speeds_angles  = swerveC.motorOutputs(//TODO);
 
     // Set wheels velocities:
@@ -407,7 +418,10 @@ namespace talon_swerve_drive_controller{
 
   void TalonSwerveDriveController::brake()
   {
+    //required input, but not needed in this case
     array<bool, WHEELCOUNT> hold;
+    //Use parking config
+    
     vector<Vector2d, WHEELCOUNT> park = swerveC.motorOutputs({0, 0}, 0, 0, false, hold, true);
     const double vel = 0.0;
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -429,7 +443,7 @@ namespace talon_swerve_drive_controller{
         brake();
         return;
       }
-
+      //TODO change to twist msg
       command_struct_.ang   = command.angular.z;
       command_struct_.lin   = command.linear.x;
       command_struct_.stamp = ros::Time::now();
@@ -502,10 +516,9 @@ namespace talon_swerve_drive_controller{
   bool TalonSwerveDriveController::setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
                              const std::string& left_wheel_name,
                              const std::string& right_wheel_name,
-                             bool lookup_wheel_separation,
                              bool lookup_wheel_radius)
   {
-    if (!(lookup_wheel_separation || lookup_wheel_radius))
+    if (!(lookup_wheel_radius))
     {
       // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
       return true;
@@ -613,6 +626,3 @@ namespace talon_swerve_drive_controller{
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
     tf_odom_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
     tf_odom_pub_->msg_.transforms[0].header.frame_id = odom_frame_id_;
-  }
-
-} // namespace diff_drive_controller

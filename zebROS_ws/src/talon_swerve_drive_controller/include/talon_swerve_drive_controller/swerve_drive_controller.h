@@ -36,6 +36,7 @@
  * Author: Enrique Fernández
  */
 
+#include <string>
 #include <controller_interface/controller.h>
 #include <talon_controllers/talon_controller_interface.h>
 #include <pluginlib/class_list_macros.h>
@@ -50,6 +51,7 @@
 #include <talon_swerve_drive_controller/odometry.h>
 #include <talon_swerve_drive_controller/speed_limiter.h>
 
+//TODO: include swerve stuff from C-Control
 namespace talon_swerve_drive_controller{
 
   /**
@@ -103,13 +105,55 @@ namespace talon_swerve_drive_controller{
     ros::Duration publish_period_;
     ros::Time last_state_publish_time_;
     bool open_loop_;
+    
 
-    swerve swerveC(//TODO) //note that all of this stuff will need to be set as ROS params
+    //TODO: where there is a //get replace something other a hard set
+    array<Vector2d, WHEELCOUNT> wheelCoords; //Something here to get wheel coordinates
+    Vector2d wheel1(-.3, .3);
+    Vector2d wheel3(.3, .3);
+    Vector2d wheel2(-.3, -.3);
+    Vector2d wheel4(.3, -.3);
+    wheelCoords = {wheel1, wheel2, wheel3, wheel4};
+	
+    string fileAddr = "offsets.txt"; //FIX TODO
+    bool invertWheelAngle = false;//something here to get wheel_angle invert
+    //something here that can be used to get encoder velocities (using std::function<double(int, int)>)
+    //something here that can be used to get encoder positions  (using std::function<double(int, int)>)
+    swerveVar::ratios driveRatios;
+    driveRatios.encodertoRotations = 20; //get, also check current value
+    driveRatios.motortoRotations = 7;//get
+    driveRatios.motortoSteering = 7;//get
+    
+    //TODO: Should units be accounted for here or with the talon?
+    //something here to get units
+    // For right now units are set here as 1 for everythinh
+    swerveVar::encoderUnits units;
+    units.steeringGet  =  1;
+    units.steeringSet  =  1;
+    units.rotationGetV =  1;
+    units.rotationGetP =  1;
+    units.rotationSetV =  1;
+    units.rotationSetP =  1;
+
+    //TODO below parameters should be gotten from somewhere not 
+    swerveVar::driveModel model;
+    model.maxspeed = 3.3528;
+    model.wheelRadius = wheel_radius_;
+    model.mass = 70;
+    model.motorFreeSpeed = 5330;
+    model.motorStallTorque = 2.41;
+    model.motorQuantity = 4;
+    
+    //something here to get encoder units (using swerveVar::encoderUnits) (Should this even be here?)
+    //something here to get drive model stuff (using swerveVar::driveModel)
+    
+    swerve swerveC(wheelCoors, fileAddr, invertWheelAngle, /*positions, velocities*/ driveRatios, units, model);
     /// Hardware handles:
-    //TODO: IMPORTANT, make generalized, TODO    
+    //TODO: IMPORTANT, make generalized, and check    
     std::vector<talon_controllers::TalonSpeedCloseLoopControllerInterface> speed_joints_;
     std::vector<talon_controllers::TalonSpeedCloseLoopControllerInterface> steering_joints_;
     /// Velocity command related:
+    //TODO CHANGE to twist 
     struct Commands
     {
       double lin;
