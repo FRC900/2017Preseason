@@ -4,6 +4,7 @@ project(talon_swerve_drive_controller)
 include ("../cmake_modules/CMakeOpt.cmake")
 
 find_package(catkin REQUIRED COMPONENTS
+	cmake_modules
     controller_interface
     nav_msgs
     realtime_tools
@@ -12,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
     tf
     urdf
 )
-find_package(catkin REQUIRED cmake_modules)
 find_package(Eigen REQUIRED)
 
 catkin_package(
