@@ -38,7 +38,7 @@
 
 #include <algorithm>
 
-#include <talon_diff_drive_controller/speed_limiter.h>
+#include <talon_swerve_drive_controller/speed_limiter.h>
 
 template<typename T>
 T clamp(T x, T min, T max)

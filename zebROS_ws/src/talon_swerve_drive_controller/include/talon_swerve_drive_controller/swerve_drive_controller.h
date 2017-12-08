@@ -51,7 +51,12 @@
 #include <talon_swerve_drive_controller/odometry.h>
 #include <talon_swerve_drive_controller/speed_limiter.h>
 
-//TODO: include swerve stuff from C-Control
+#include <functional>
+#include <talon_swerve_drive_controller/Swerve.h>
+#include <array>
+
+#include <Eigen/Dense>
+using Eigen::Vector2d;
 namespace talon_swerve_drive_controller{
 
   /**
@@ -106,7 +111,30 @@ namespace talon_swerve_drive_controller{
     ros::Time last_state_publish_time_;
     bool open_loop_;
     
-
+    double getPositions(int motor, int wheel)
+    {
+	if(motor==0)
+	{
+	    return speed_joints_[wheel].getPosition();
+	}
+	else
+	{
+	    return steering_joints_[wheel].getPosition();
+	}
+    }    
+    double getVelocities(int motor, int wheel)
+    {
+	if(motor==0)
+	{
+	    return speed_joints_[wheel].getVelocity();
+	}
+	else
+	{
+	    return steering_joints_[wheel].getVelocity();
+	}
+    }    
+    std::function<double(int, int)> getPositions_ = getPositions;
+    std::function<double(int, int)> getVelocities_ = getVelocities;
     //TODO: where there is a //get replace something other a hard set
     array<Vector2d, WHEELCOUNT> wheelCoords; //Something here to get wheel coordinates
     Vector2d wheel1(-.3, .3);
@@ -147,35 +175,35 @@ namespace talon_swerve_drive_controller{
     //something here to get encoder units (using swerveVar::encoderUnits) (Should this even be here?)
     //something here to get drive model stuff (using swerveVar::driveModel)
     
-    swerve swerveC(wheelCoors, fileAddr, invertWheelAngle, /*positions, velocities*/ driveRatios, units, model);
+    
+    swerve swerveC(wheelCoors, fileAddr, invertWheelAngle, getPositions_, getVelocities_, driveRatios, units, model);
     /// Hardware handles:
     //TODO: IMPORTANT, make generalized, and check    
     std::vector<talon_controllers::TalonSpeedCloseLoopControllerInterface> speed_joints_;
-    std::vector<talon_controllers::TalonSpeedCloseLoopControllerInterface> steering_joints_;
+    std::vector<talon_controllers::TalonPositionCloseLoopControllerInterface> steering_joints_;
     /// Velocity command related:
-    //TODO CHANGE to twist 
     struct Commands
     {
-      double lin;
+      Vector2d lin;
       double ang;
       ros::Time stamp;
 
-      Commands() : lin(0.0), ang(0.0), stamp(0.0) {}
+      Commands() : lin({0.0, 0.0}), ang(0.0), stamp(0.0) {}
     };
     realtime_tools::RealtimeBuffer<Commands> command_;
     Commands command_struct_;
     ros::Subscriber sub_command_;
 
     /// Publish executed commands
-    boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped> > cmd_vel_pub_;
+    //boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped> > cmd_vel_pub_;
 
     /// Odometry related:
-    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
-    Odometry odometry_;
+    //boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    //boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    //Odometry odometry_;
 
-    /// Wheel separation, wrt the midpoint of the wheel width:
-    array<Vector2d, WHEELCOUNT> wheel_coordinates_;
+    /// Wheel coordinates
+    array<Vector2d, WHEELCOUNT> wheel_coordinates_ = wheelCoords;
 
     /// Wheel radius (assuming it's the same for the left and right wheels):
     double wheel_radius_;

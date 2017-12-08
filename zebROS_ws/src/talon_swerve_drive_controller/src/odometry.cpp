@@ -39,7 +39,7 @@
  * Author: Paul Mathieu
  */
 
-#include <talon_diff_drive_controller/odometry.h>
+#include <talon_swerve_drive_controller/odometry.h>
 
 #include <boost/bind.hpp>
 

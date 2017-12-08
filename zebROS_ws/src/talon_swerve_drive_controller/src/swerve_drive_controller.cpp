@@ -51,14 +51,15 @@
 #include <Eigen/Dense>
 
 //TODO: include swerve stuff from C-Control
-using namespace Eigen::Vector2d;
+using Eigen::Vector2d;
+/*
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {
   return std::sqrt(std::pow(vec1.x-vec2.x,2) +
                    std::pow(vec1.y-vec2.y,2) +
                    std::pow(vec1.z-vec2.z,2));
 }
-
+*/
 /*
 * \brief Check that a link exists and has a geometry collision.
 * \param link The link
@@ -153,19 +154,13 @@ static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& w
   ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder or sphere!");
   return false;
 }
-//generates default set of coords for below
-array<Vector2d, WHEELCOUNT> def_wheel_coords;
-for(int i = 0; i < WHEELCOUNT; i++)
-{
-    def_wheel_coords[i] = {0.0, 0.0};
-}
 
 namespace talon_swerve_drive_controller{
 
   TalonSwerveDriveController::TalonSwerveDriveController()
     : open_loop_(false)
     , command_struct_()
-    , wheel_coordinates_(def_wheel_coords) //FIX/CHECK TODO
+    //, wheel_coordinates_() 
     , wheel_radius_(0.0)
     , cmd_vel_timeout_(0.5)
     , allow_multiple_cmd_vel_publishers_(true)
@@ -193,7 +188,7 @@ namespace talon_swerve_drive_controller{
       return false;
     }
 
-    if (left_wheel_names.size() != right_wheel_names.size())
+    if (speed_names.size() != steering_names.size())
     {
       ROS_ERROR_STREAM_NAMED(name_,
           "#speed (" << speed_names.size() << ") != " <<
@@ -266,7 +261,7 @@ namespace talon_swerve_drive_controller{
     controller_nh.param("angular/z/min_jerk"               , limiter_ang_.min_jerk               , -limiter_ang_.max_jerk              );
 
     // Publish limited velocity:
-    controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
+    //controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
 
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_coordinates = !controller_nh.getParam("wheel_coordinates", wheel_coordinates_);
@@ -298,9 +293,9 @@ namespace talon_swerve_drive_controller{
                             << " and steering motors with joint name: " << steering_names[i]);
 
 	  ros::NodeHandle l_nh(controller_nh,speed_names[i]);
-      left_wheel_joints_[i].initWithNode(hw, nullptr, l_nh);
-	  ros::NodeHandle r_nh(controller_nh,right_wheel_names[i]);
-      right_wheel_joints_[i].initWithNode(hw, nullptr, r_nh);
+      speed_joints_[i].initWithNode(hw, nullptr, l_nh);
+	  ros::NodeHandle r_nh(controller_nh,steering_names[i]);
+      steering_joints_[i].initWithNode(hw, nullptr, r_nh);
     }
 
     sub_command_ = controller_nh.subscribe("cmd_vel", 1, &TalonSwerveDriveController::cmdVelCallback, this);
@@ -374,11 +369,10 @@ namespace talon_swerve_drive_controller{
     Commands curr_cmd = *(command_.readFromRT());
     const double dt = (time - curr_cmd.stamp).toSec();
 
-    //TODO command should be changed to a twist msg or similar
     // Brake if cmd_vel has timeout:
     if (dt > cmd_vel_timeout_)
     {
-      curr_cmd.lin = 0.0;
+      curr_cmd.lin = {0.0, 0.0};
       curr_cmd.ang = 0.0;
     }
 
@@ -391,7 +385,10 @@ namespace talon_swerve_drive_controller{
     // Compute wheels velocities:
     //Parse curr_cmd to get velocity vector and rotation (z axis)
     //TODO: check unit conversions/coordinate frames
-    vector<Vector2d, WHEELCOUNT> speeds_angles  = swerveC.motorOutputs(//TODO);
+    
+    double angle = M_PI/2;
+    array<bool, WHEELCOUNT> holder;
+    vector<Vector2d, WHEELCOUNT> speeds_angles  = swerveC.motorOutputs(curr_cmd.lin, curr_cmd.ang, angle, false, holder, false);
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -444,14 +441,17 @@ namespace talon_swerve_drive_controller{
         return;
       }
       //TODO change to twist msg
-      command_struct_.ang   = command.angular.z;
-      command_struct_.lin   = command.linear.x;
+      command_struct_.ang = command.angular.z;
+      command_struct_.lin[0] = command.linear.x;
+      command_struct_.lin[1] = command.linear.y;
       command_struct_.stamp = ros::Time::now();
       command_.writeFromNonRT (command_struct_);
+      //TODO fix debug
       ROS_DEBUG_STREAM_NAMED(name_,
                              "Added values to command. "
                              << "Ang: "   << command_struct_.ang << ", "
-                             << "Lin: "   << command_struct_.lin << ", "
+                             << "Lin X: "   << command_struct_.lin[0] << ", "
+                             << "Lin Y: "   << command_struct_.lin[1] << ", "
                              << "Stamp: " << command_struct_.stamp);
     }
     else
@@ -536,35 +536,12 @@ namespace talon_swerve_drive_controller{
 
     urdf::ModelInterfaceSharedPtr model(urdf::parseURDF(robot_model_str));
 
-    urdf::JointConstSharedPtr left_wheel_joint(model->getJoint(left_wheel_name));
-    urdf::JointConstSharedPtr right_wheel_joint(model->getJoint(right_wheel_name));
+    //TODO: replace with swerve equivalent
+    //urdf::JointConstSharedPtr left_wheel_joint(model->getJoint(left_wheel_name));
+    //urdf::JointConstSharedPtr right_wheel_joint(model->getJoint(right_wheel_name));
 
-    if (lookup_wheel_separation)
-    {
-      // Get wheel separation
-      if (!left_wheel_joint)
-      {
-        ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
-                               << " couldn't be retrieved from model description");
-        return false;
-      }
 
-      if (!right_wheel_joint)
-      {
-        ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
-                               << " couldn't be retrieved from model description");
-        return false;
-      }
 
-      ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                      << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                      << left_wheel_joint->parent_to_joint_origin_transform.position.z);
-      ROS_INFO_STREAM("right wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                      << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                      << right_wheel_joint->parent_to_joint_origin_transform.position.z);
-
-      wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
-                                             right_wheel_joint->parent_to_joint_origin_transform.position);
 
     }
 
@@ -610,7 +587,6 @@ namespace talon_swerve_drive_controller{
         (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
         (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
         (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
-    odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
