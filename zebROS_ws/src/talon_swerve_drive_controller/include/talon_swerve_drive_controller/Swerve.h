@@ -55,12 +55,12 @@ using namespace swerveVar;
 class swerve
 {
 	public:
-		swerve(array<Vector2d, WHEELCOUNT> _wheelCoordinates, string _fileAddress, bool _wheelAngleInvert, std::function<double(int, int)> _encoderPosition, std::function<double(int, int)> _encoderVelocity, ratios _ratio, encoderUnits _units, driveModel _drive);
+		swerve(array<Vector2d, WHEELCOUNT> _wheelCoordinates, string _fileAddress, bool _wheelAngleInvert, ratios _ratio, encoderUnits _units, driveModel _drive);
 		
-		array<Vector2d, WHEELCOUNT> motorOutputs(Vector2d velocityVector, double rotation, double angle, bool forceRead, array<bool, WHEELCOUNT> &reverses, bool park, int rotationCenterID = 0, bool overrideID = false, Vector2d centerOfRotation = {0, 0});
+		array<Vector2d, WHEELCOUNT> motorOutputs(Vector2d velocityVector, double rotation, double angle, bool forceRead, array<bool, WHEELCOUNT> &reverses, bool park, array<double, WHEELCOUNT> positionsNew, int rotationCenterID = 0, bool overrideID = false, Vector2d centerOfRotation = {0, 0});
 		//for non field centric drive set angle = pi/2
 		//if rotationCenterID == 0 we will use the base center of rotation
-		void saveNewOffsets(bool useVals, array<double, WHEELCOUNT> newOffsets); //should these be doubles? 
+		void saveNewOffsets(bool useVals, array<double, WHEELCOUNT> newOffsets, array<double, WHEELCOUNT> newPosition); //should these be doubles? 
 		//Note that unless you pass vals in and set useVals to true, it will use the current wheel positions, wheels should be pointing to the right.
 		double getWheelAngle(int index); 
 		//should we get them together instead?
@@ -73,7 +73,7 @@ class swerve
 		swerveDriveMath swerveMath; //this should be public
 	
 	private:
-		
+		array<double, WHEELCOUNT> encoderPosition;
 		array<double, WHEELCOUNT> offsets; //Should these be doubles?
 		string fileAddress;
 		//Second piece of data is here just for physics/modeling
@@ -88,8 +88,6 @@ class swerve
 			double maxRotRate;
 		};
 		array<multiplierSet, 63> multiplierSets;
-		std::function<double(int, int)> encoderPosition;	
-		std::function<double(int, int)> encoderVelocity;
 		ratios ratio;
 		encoderUnits units;
 		driveModel drive;

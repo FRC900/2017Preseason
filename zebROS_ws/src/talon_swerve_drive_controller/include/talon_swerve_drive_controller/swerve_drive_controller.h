@@ -54,8 +54,10 @@
 #include <functional>
 #include <talon_swerve_drive_controller/Swerve.h>
 #include <array>
-
+#include <memory>
 #include <Eigen/Dense>
+
+
 using Eigen::Vector2d;
 namespace talon_swerve_drive_controller{
 
@@ -111,77 +113,40 @@ namespace talon_swerve_drive_controller{
     ros::Time last_state_publish_time_;
     bool open_loop_;
     
-    double getPositions(int motor, int wheel)
-    {
-	if(motor==0)
-	{
-	    return speed_joints_[wheel].getPosition();
-	}
-	else
-	{
-	    return steering_joints_[wheel].getPosition();
-	}
-    }    
-    double getVelocities(int motor, int wheel)
-    {
-	if(motor==0)
-	{
-	    return speed_joints_[wheel].getVelocity();
-	}
-	else
-	{
-	    return steering_joints_[wheel].getVelocity();
-	}
-    }    
-    std::function<double(int, int)> getPositions_ = getPositions;
-    std::function<double(int, int)> getVelocities_ = getVelocities;
+
     //TODO: where there is a //get replace something other a hard set
-    array<Vector2d, WHEELCOUNT> wheelCoords; //Something here to get wheel coordinates
-    Vector2d wheel1(-.3, .3);
-    Vector2d wheel3(.3, .3);
-    Vector2d wheel2(-.3, -.3);
-    Vector2d wheel4(.3, -.3);
-    wheelCoords = {wheel1, wheel2, wheel3, wheel4};
-	
+    
+    double check = WHEELCOUNT;
+    Vector2d wheel1 = {-.3, .3};
+    Vector2d wheel3 = {.3, .3};
+    Vector2d wheel2 = {-.3, -.3};
+    Vector2d wheel4 = {.3, -.3};
+    std::array<Vector2d, 4> wheelCoords; //Something here to get wheel coordinates
     string fileAddr = "offsets.txt"; //FIX TODO
     bool invertWheelAngle = false;//something here to get wheel_angle invert
     //something here that can be used to get encoder velocities (using std::function<double(int, int)>)
     //something here that can be used to get encoder positions  (using std::function<double(int, int)>)
-    swerveVar::ratios driveRatios;
-    driveRatios.encodertoRotations = 20; //get, also check current value
-    driveRatios.motortoRotations = 7;//get
-    driveRatios.motortoSteering = 7;//get
-    
-    //TODO: Should units be accounted for here or with the talon?
+    swerveVar::ratios driveRatios = {20, 7, 7}; //get
     //something here to get units
     // For right now units are set here as 1 for everythinh
-    swerveVar::encoderUnits units;
-    units.steeringGet  =  1;
-    units.steeringSet  =  1;
-    units.rotationGetV =  1;
-    units.rotationGetP =  1;
-    units.rotationSetV =  1;
-    units.rotationSetP =  1;
+    swerveVar::encoderUnits units = {1, 1, 1, 1, 1, 1};
+    
+
 
     //TODO below parameters should be gotten from somewhere not 
     swerveVar::driveModel model;
-    model.maxspeed = 3.3528;
-    model.wheelRadius = wheel_radius_;
-    model.mass = 70;
-    model.motorFreeSpeed = 5330;
-    model.motorStallTorque = 2.41;
-    model.motorQuantity = 4;
     
     //something here to get encoder units (using swerveVar::encoderUnits) (Should this even be here?)
     //something here to get drive model stuff (using swerveVar::driveModel)
     
-    
-    swerve swerveC(wheelCoors, fileAddr, invertWheelAngle, getPositions_, getVelocities_, driveRatios, units, model);
+    swerve swerveC;    
+
     /// Hardware handles:
     //TODO: IMPORTANT, make generalized, and check    
     std::vector<talon_controllers::TalonSpeedCloseLoopControllerInterface> speed_joints_;
     std::vector<talon_controllers::TalonPositionCloseLoopControllerInterface> steering_joints_;
     /// Velocity command related:
+    
     struct Commands
     {
       Vector2d lin;
@@ -229,8 +194,6 @@ namespace talon_swerve_drive_controller{
     /// Speed limiters:
     Commands last1_cmd_;
     Commands last0_cmd_;
-    SpeedLimiter limiter_lin_;
-    SpeedLimiter limiter_ang_;
 
     /// Publish limited velocity:
     bool publish_cmd_;
@@ -266,20 +229,23 @@ namespace talon_swerve_drive_controller{
      * \param left_wheel_name Name of the left wheel joint
      * \param right_wheel_name Name of the right wheel joint
      */
-    bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
-                               const std::string& left_wheel_name,
-                               const std::string& right_wheel_name,
-                               bool lookup_wheel_separation,
+   /* 
+   bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
+                               const std::string& steering_name,
+                               const std::string& speed_name,
                                bool lookup_wheel_radius);
 
-    /**
+    */
+     /**
      * \brief Sets the odometry publishing fields
      * \param root_nh Root node handle
      * \param controller_nh Node handle inside the controller namespace
      */
+    /*
     void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
-
+    */
   };
 
   PLUGINLIB_EXPORT_CLASS(talon_swerve_drive_controller::TalonSwerveDriveController, controller_interface::ControllerBase);
+  
 } // namespace diff_drive_controller

@@ -157,6 +157,7 @@ static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& w
 
 namespace talon_swerve_drive_controller{
 
+
   TalonSwerveDriveController::TalonSwerveDriveController()
     : open_loop_(false)
     , command_struct_()
@@ -169,7 +170,16 @@ namespace talon_swerve_drive_controller{
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
     , publish_cmd_(false)
+    , swerveC(wheelCoords, fileAddr, invertWheelAngle, driveRatios, units, model)
+
   {
+    wheelCoords = {wheel1, wheel2, wheel3, wheel4};
+    model.maxSpeed = 3.3528;
+    model.wheelRadius =  wheel_radius_;
+    model.mass = 70;
+    model.motorFreeSpeed = 5330;
+    model.motorStallTorque = 2.41;
+    model.motorQuantity = 4;
   }
 
   bool TalonSwerveDriveController::init(hardware_interface::TalonCommandInterface* hw,
@@ -219,7 +229,6 @@ namespace talon_swerve_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Velocity rolling window size of "
                           << velocity_rolling_window_size << ".");
 
-    odometry_.setVelocityRollingWindowSize(velocity_rolling_window_size);
 
     // Twist command related:
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
@@ -239,52 +248,33 @@ namespace talon_swerve_drive_controller{
     controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
     ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
-    // Velocity and acceleration limits:
-    controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
-    controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
-    controller_nh.param("linear/x/has_jerk_limits"        , limiter_lin_.has_jerk_limits        , limiter_lin_.has_jerk_limits        );
-    controller_nh.param("linear/x/max_velocity"           , limiter_lin_.max_velocity           ,  limiter_lin_.max_velocity          );
-    controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , -limiter_lin_.max_velocity          );
-    controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       ,  limiter_lin_.max_acceleration      );
-    controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , -limiter_lin_.max_acceleration      );
-    controller_nh.param("linear/x/max_jerk"               , limiter_lin_.max_jerk               ,  limiter_lin_.max_jerk              );
-    controller_nh.param("linear/x/min_jerk"               , limiter_lin_.min_jerk               , -limiter_lin_.max_jerk              );
-
-    controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
-    controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
-    controller_nh.param("angular/z/has_jerk_limits"        , limiter_ang_.has_jerk_limits        , limiter_ang_.has_jerk_limits        );
-    controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           ,  limiter_ang_.max_velocity          );
-    controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , -limiter_ang_.max_velocity          );
-    controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
-    controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
-    controller_nh.param("angular/z/max_jerk"               , limiter_ang_.max_jerk               ,  limiter_ang_.max_jerk              );
-    controller_nh.param("angular/z/min_jerk"               , limiter_ang_.min_jerk               , -limiter_ang_.max_jerk              );
 
     // Publish limited velocity:
     //controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
 
     // If either parameter is not available, we need to look up the value in the URDF
-    bool lookup_wheel_coordinates = !controller_nh.getParam("wheel_coordinates", wheel_coordinates_);
+    //bool lookup_wheel_coordinates = !controller_nh.getParam("wheel_coordinates", wheel_coordinates_);
     bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
-
+    /*
     if (!setOdomParamsFromUrdf(root_nh,
                               speed_names[0],
                               steering_names[0],
-                              lookup_wheel_coordinates,
+                              //lookup_wheel_coordinates,
                               lookup_wheel_radius))
     {
       return false;
     }
 
     // Regardless of how we got the separation and radius, use them
+    */
     // to set the odometry parameters
-    setOdomPubFields(root_nh, controller_nh);
+    //setOdomPubFields(root_nh, controller_nh);
 
-    if (publish_cmd_)
+    /*if (publish_cmd_)
     {
       cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
     }
-
+    */
     // Get the joint object to use in the realtime loop
     for (int i = 0; i < wheel_joints_size_; ++i)
     {
@@ -386,9 +376,14 @@ namespace talon_swerve_drive_controller{
     //Parse curr_cmd to get velocity vector and rotation (z axis)
     //TODO: check unit conversions/coordinate frames
     
+    array<double, WHEELCOUNT> curPos;
+    for(int i = 0; i < WHEELCOUNT; i++)
+    {
+	curPos[i] = steering_joints_[i].getPosition();
+    }
     double angle = M_PI/2;
-    array<bool, WHEELCOUNT> holder;
-    vector<Vector2d, WHEELCOUNT> speeds_angles  = swerveC.motorOutputs(curr_cmd.lin, curr_cmd.ang, angle, false, holder, false);
+    std::array<bool, WHEELCOUNT> holder;
+    std::array<Vector2d, WHEELCOUNT> speeds_angles  = swerveC.motorOutputs(curr_cmd.lin, curr_cmd.ang, angle, false, holder, false, curPos);
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -405,7 +400,7 @@ namespace talon_swerve_drive_controller{
     // Register starting time used to keep fixed rate
     last_state_publish_time_ = time;
 
-    odometry_.init(time);
+    //odometry_.init(time);
   }
 
   void TalonSwerveDriveController::stopping(const ros::Time& /*time*/)
@@ -419,7 +414,12 @@ namespace talon_swerve_drive_controller{
     array<bool, WHEELCOUNT> hold;
     //Use parking config
     
-    vector<Vector2d, WHEELCOUNT> park = swerveC.motorOutputs({0, 0}, 0, 0, false, hold, true);
+    array<double, WHEELCOUNT> curPos;
+    for(int i = 0; i < WHEELCOUNT; i++)
+    {
+	curPos[i] = steering_joints_[i].getPosition();
+    }
+    std::array<Vector2d, WHEELCOUNT> park = swerveC.motorOutputs({0, 0}, 0, 0, false, hold, true, curPos);
     const double vel = 0.0;
     for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
@@ -512,10 +512,10 @@ namespace talon_swerve_drive_controller{
 
       return true;
   }
-
+/*
   bool TalonSwerveDriveController::setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
-                             const std::string& left_wheel_name,
-                             const std::string& right_wheel_name,
+                             const std::string& steering_name,
+                             const std::string& speed_name,
                              bool lookup_wheel_radius)
   {
     if (!(lookup_wheel_radius))
@@ -543,9 +543,9 @@ namespace talon_swerve_drive_controller{
 
 
 
-    }
+   
 
-    if (lookup_wheel_radius)
+    if(lookup_wheel_radius)
     {
       // Get wheel radius
       if (!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
@@ -602,3 +602,7 @@ namespace talon_swerve_drive_controller{
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
     tf_odom_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
     tf_odom_pub_->msg_.transforms[0].header.frame_id = odom_frame_id_;
+  }
+*/
+}
+

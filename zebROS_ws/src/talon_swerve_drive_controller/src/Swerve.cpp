@@ -8,14 +8,12 @@
 using namespace std;
 using namespace Eigen;
 
-swerve::swerve(array<Vector2d, WHEELCOUNT> _wheelCoordinates, string _fileAddress, bool _wheelAngleInvert, std::function<double(int, int)> _encoderPosition, std::function<double(int, int)> _encoderVelocity, ratios _ratio, encoderUnits _units, driveModel _drive)
+swerve::swerve(array<Vector2d, WHEELCOUNT> _wheelCoordinates, string _fileAddress, bool _wheelAngleInvert, ratios _ratio, encoderUnits _units, driveModel _drive)
 {
 	wheelCoordinates = _wheelCoordinates;
 
 	swerveMath = swerveDriveMath(wheelCoordinates);
 
-	encoderPosition = _encoderPosition;
-	encoderVelocity = _encoderVelocity;
 	ratio = _ratio;
 	units = _units;
 	drive = _drive;
@@ -33,9 +31,8 @@ swerve::swerve(array<Vector2d, WHEELCOUNT> _wheelCoordinates, string _fileAddres
 		array<double, WHEELCOUNT> darray; 
                 for(int i = 0; i < WHEELCOUNT; i++) 
                 { 
-                        darray[i] = 0; 
+                        offsets[i] = 0; 
                 }
-		saveNewOffsets(false, darray);
 	}
 	else
 	{
@@ -49,9 +46,10 @@ swerve::swerve(array<Vector2d, WHEELCOUNT> _wheelCoordinates, string _fileAddres
 	}
 
 };
-array<Vector2d, WHEELCOUNT> swerve::motorOutputs(Vector2d velocityVector, double rotation, double angle, bool forceRead, array<bool, WHEELCOUNT> &reverses, bool park, int rotationCenterID, bool overrideID, Vector2d centerOfRotation)
+array<Vector2d, WHEELCOUNT> swerve::motorOutputs(Vector2d velocityVector, double rotation, double angle, bool forceRead, array<bool, WHEELCOUNT> &reverses, bool park, array <double, WHEELCOUNT> positionsNew, int rotationCenterID, bool overrideID, Vector2d centerOfRotation)
 {
-	array<Vector2d, WHEELCOUNT> speedsAndAngles;
+	encoderPosition = positionsNew;
+        array<Vector2d, WHEELCOUNT> speedsAndAngles;
 	if(!park)
 	{
 		velocityVector/=drive.maxSpeed;
@@ -67,25 +65,13 @@ array<Vector2d, WHEELCOUNT> swerve::motorOutputs(Vector2d velocityVector, double
 		speedsAndAngles = swerveMath.wheelSpeedsAngles(multiplierSets[rotationCenterID].multipliers, velocityVector, rotation, angle);
 		for(int i = 0; i < WHEELCOUNT; i++)
 		{
-			double nearestAngle;
+			double nearestangle;
 			bool reverse;
-			if(forceRead)
-			{
 				getWheelAngle(i);
-				nearestAngle = leastDistantAngleWithinHalfPi(savedEncoderVals[i], speedsAndAngles[i][1], reverse);
-			}
-			else
-			{
-				nearestAngle = leastDistantAngleWithinHalfPi(savedEncoderVals[i], speedsAndAngles[i][1], reverse);
-				if(abs(savedEncoderVals[i] - nearestAngle) > M_PI/4)
-				{
-					getWheelAngle(i);
-					nearestAngle = leastDistantAngleWithinHalfPi(savedEncoderVals[i], speedsAndAngles[i][1], reverse);
-				}
-			}
+				nearestangle = leastDistantAngleWithinHalfPi(encoderPosition[i], speedsAndAngles[i][1], reverse);
 			reverses[i] = reverse;
 			speedsAndAngles[i][0]*=((drive.maxSpeed/(drive.wheelRadius*2*M_PI))/ratio.encodertoRotations)*units.rotationSetV* (reverse ? -1 : 1);
-			speedsAndAngles[i][1] = (nearestAngle/(2*M_PI))*units.steeringSet - offsets[i];
+			speedsAndAngles[i][1] = (nearestangle/(2*M_PI))*units.steeringSet - offsets[i];
 		}
 	}
 	else
@@ -94,18 +80,25 @@ array<Vector2d, WHEELCOUNT> swerve::motorOutputs(Vector2d velocityVector, double
 		{
 			speedsAndAngles[i][1] = swerveMath.parkingAngle[i];
 			speedsAndAngles[i][0] = 0;
+			
+			double nearestangle;
+			bool reverse;
+			getWheelAngle(i);
+			nearestangle = leastDistantAngleWithinHalfPi(encoderPosition[i], speedsAndAngles[i][1], reverse);
+			speedsAndAngles[i][1] = (nearestangle/(2*M_PI))*units.steeringSet - offsets[i];
 		}
 
 	}
 	return speedsAndAngles;
 }
-void swerve::saveNewOffsets(bool useVals, array<double, WHEELCOUNT> newOffsets)
+void swerve::saveNewOffsets(bool useVals, array<double, WHEELCOUNT> newOffsets, array<double, WHEELCOUNT> newPosition)
 {
+	encoderPosition = newPosition;
 	if(!useVals)
 	{
 		for(int i = 0; i < WHEELCOUNT; i++)
 		{
-			newOffsets[i] = encoderPosition(i, 1);
+			newOffsets[i] = encoderPosition[i];
 		}
 	}
 	offsets = newOffsets;
@@ -134,7 +127,7 @@ Vector2d calculateOdom()
 
 double swerve::getWheelAngle(int index)
 {
-	savedEncoderVals[index] = (encoderPosition(index, 1)+offsets[index])*units.steeringGet*2*M_PI*wheelAngleInvert;
+	savedEncoderVals[index] = (encoderPosition[index]+offsets[index])*units.steeringGet*2*M_PI*wheelAngleInvert;
 	return savedEncoderVals[index];
 }
 
