@@ -1,0 +1,7 @@
+<launch>
+  <!-- load configuration -->
+  <rosparam command="load" file="$(find joystick_state_controller)/joystick_state_controller.yaml" />
+
+  <!-- spawn controller -->
+  <node name="joystick_state_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="joystick_state_controller" />
+</launch>

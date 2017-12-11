@@ -1,0 +1,7 @@
+<library path="lib/libjoystick_controllers">
+
+  <class name="joystick_controllers/JoystickController" type="joystick_controllers::JoystickController">
+    <description>
+     Configure and run a Joystick (for rumble) 
+    </description>
+</library>
