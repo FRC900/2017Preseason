@@ -158,56 +158,58 @@ namespace joystick_state_controller
             */
         realtime_pub_->msg_.header.stamp = time;
         for (unsigned i=0; i<num_hw_joints_; i++){
-	      realtime_pub_->msg_.leftStickX[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.leftStickY[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.rightStickX[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.rightStickY[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.leftTrigger[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.rightTrigger[i] = joystick_state_[i].;
+	      realtime_pub_->msg_.leftStickX[i] = joystick_state_[i].GetRawAxis(0);
+	      realtime_pub_->msg_.leftStickY[i] = joystick_state_[i].GetRawAxis(1);
+	      realtime_pub_->msg_.rightStickX[i] = joystick_state_[i].GetRawAxis(4);
+	      realtime_pub_->msg_.rightStickY[i] = joystick_state_[i].GetRawAxis(5);
+	      realtime_pub_->msg_.leftTrigger[i] = joystick_state_[i].GetRawAxis(2);
+	      realtime_pub_->msg_.rightTrigger[i] = joystick_state_[i].GetRawAxis(3);
 
-	      realtime_pub_->msg_.buttonX[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonXPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonXRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonY[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonYPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonYRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonA[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonAPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonARelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonB[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonBPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonBRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonStart[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonStartPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonStartRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonBack[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonBackPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.buttonBackRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.bumperLeft[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.bumperLeftPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.bumperLeftRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.bumperRight[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.bumperRightPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.bumperRightRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.stickLeft[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.stickLeftPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.stickLeftRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.stickRight[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.stickRightPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.stickRightRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirLeft[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirLeftPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirLeftRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirDown[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirDownPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirDownRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirUp[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirUpPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirUpRelease[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirRight[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirRightPress[i] = joystick_state_[i].;
-	      realtime_pub_->msg_.dirRightRelease[i] = joystick_state_[i].;
-          }
+	      realtime_pub_->msg_.buttonX[i] = joystick_state_[i].GetRawButton(3);
+	      realtime_pub_->msg_.buttonXPress[i] = joystick_state_[i].GetRawButtonPressed(3);
+	      realtime_pub_->msg_.buttonXRelease[i] = joystick_state_[i].GetRawButtonReleased(3);
+	      realtime_pub_->msg_.buttonY[i] = joystick_state_[i].GetRawButton(4);
+	      realtime_pub_->msg_.buttonYPress[i] = joystick_state_[i].GetRawButtonPressed(4);
+	      realtime_pub_->msg_.buttonYRelease[i] = joystick_state_[i].GetRawButtonReleased(4);
+	      realtime_pub_->msg_.buttonA[i] = joystick_state_[i].GetRawButton(1);
+	      realtime_pub_->msg_.buttonAPress[i] = joystick_state_[i].GetRawButtonPressed(1);
+	      realtime_pub_->msg_.buttonARelease[i] = joystick_state_[i].GetRawButtonReleased(1);
+	      realtime_pub_->msg_.buttonB[i] = joystick_state_[i].GetRawButton(2);
+	      realtime_pub_->msg_.buttonBPress[i] = joystick_state_[i].GetRawButtonPressed(2);
+	      realtime_pub_->msg_.buttonBRelease[i] = joystick_state_[i].GetRawButtonReleased(2);
+	      realtime_pub_->msg_.buttonStart[i] = joystick_state_[i].GetRawButton(8);
+	      realtime_pub_->msg_.buttonStartPress[i] = joystick_state_[i].GetRawButtonPressed(8);
+	      realtime_pub_->msg_.buttonStartRelease[i] = joystick_state_[i].GetRawButtonReleased(8);
+	      realtime_pub_->msg_.buttonBack[i] = joystick_state_[i].GetRawButton(7);
+	      realtime_pub_->msg_.buttonBackPress[i] = joystick_state_[i].GetRawButtonPressed(7);
+	      realtime_pub_->msg_.buttonBackRelease[i] = joystick_state_[i].GetRawButtonReleased(7);
+	      realtime_pub_->msg_.bumperLeft[i] = joystick_state_[i].GetRawButton(5);
+	      realtime_pub_->msg_.bumperLeftPress[i] = joystick_state_[i].GetRawButtonPressed(5);
+	      realtime_pub_->msg_.bumperLeftRelease[i] = joystick_state_[i].GetRawButtonReleased(5);
+	      realtime_pub_->msg_.bumperRight[i] = joystick_state_[i].GetRawButton(6);
+	      realtime_pub_->msg_.bumperRightPress[i] = joystick_state_[i].GetRawButtonPressed(6);
+	      realtime_pub_->msg_.bumperRightRelease[i] = joystick_state_[i].GetRawButtonReleased(6);
+	      realtime_pub_->msg_.stickLeft[i] = joystick_state_[i].GetRawButton(9);
+	      realtime_pub_->msg_.stickLeftPress[i] = joystick_state_[i].GetRawButtonPressed(9);
+	      realtime_pub_->msg_.stickLeftRelease[i] = joystick_state_[i].GetRawButtonReleased(9);
+	      realtime_pub_->msg_.stickRight[i] = joystick_state_[i].GetRawButton(10);
+	      realtime_pub_->msg_.stickRightPress[i] = joystick_state_[i].GetRawButtonPressed(10);
+	      realtime_pub_->msg_.stickRightRelease[i] = joystick_state_[i].GetRawButtonReleased(10);
+	      /*
+	      realtime_pub_->msg_.dirLeft[i] = joystick_state_[i].GetRawButton(3);
+	      realtime_pub_->msg_.dirLeftPress[i] = joystick_state_[i].GetRawButtonPressed(3);
+	      realtime_pub_->msg_.dirLeftRelease[i] = joystick_state_[i].GetRawButtonReleased(3);
+	      realtime_pub_->msg_.dirDown[i] = joystick_state_[i].GetRawButton(3);
+	      realtime_pub_->msg_.dirDownPress[i] = joystick_state_[i].GetRawButtonPressed(3);
+	      realtime_pub_->msg_.dirDownRelease[i] = joystick_state_[i].GetRawButtonReleased(3);
+	      realtime_pub_->msg_.dirUp[i] = joystick_state_[i].GetRawButton(3);
+	      realtime_pub_->msg_.dirUpPress[i] = joystick_state_[i].GetRawButtonPressed(3);
+	      realtime_pub_->msg_.dirUpRelease[i] = joystick_state_[i].GetRawButtonReleased(3);
+	      realtime_pub_->msg_.dirRight[i] = joystick_state_[i].GetRawButton(3);
+	      realtime_pub_->msg_.dirRightPress[i] = joystick_state_[i].GetRawButtonPressed(3);
+	      realtime_pub_->msg_.dirRightRelease[i] = joystick_state_[i].GetRawButtonReleased(3);
+              */
+	  }
         }
         realtime_pub_->unlockAndPublish();
       }

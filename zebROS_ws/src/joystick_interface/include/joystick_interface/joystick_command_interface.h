@@ -26,7 +26,7 @@ namespace hardware_interface
 	{
 		public:
 			JoystickHWCommand(void) :
-				command_(0.),
+				command_(0.0)
 				
 			{
 			}
