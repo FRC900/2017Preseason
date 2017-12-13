@@ -96,7 +96,7 @@ class JoystickControllerInterface
 		// motor controller
 		bool readParams(ros::NodeHandle &n, hardware_interface::JoystickStateInterface *tsi)
 		{
-			return params_.readJointName(n, "joint") && 
+			return params_.readJointName(n, "joint");
 		}
 
 
@@ -124,8 +124,14 @@ class JoystickControllerInterface
 		// hardware. Make this a separate method outside of
 		// init() so that dynamic reconfigure callback can write
 		// values using this method at any time
+		bool writeParamsToHW(const JoystickCIParams &params)
+                {
+                        // Save copy of params written to HW
+                        // so they can be queried later?
+                        params_ = params;
 
-
+			return true;
+		}
 		// Read params from config file and use them to 
 		// initialize the Joystick hardware
 		// Useful for the hopefully common case where there's 
@@ -144,12 +150,10 @@ class JoystickControllerInterface
 			// under the node's name.  Doing so allows multiple
 			// copies of the class to be started, each getting
 			// their own namespace.
-			srv_ = std::make_shared<dynamic_reconfigure::Server<joystick_controllers::JoystickConfigConfig>>(n);
 
 			// Register a callback function which is run each
 			// time parameters are changed using 
 			// rqt_reconfigure or the like
-			srv_->setCallback(boost::bind(&JoystickControllerInterface::callback, this, _1, _2));	
 
 			return result;
 		}
@@ -159,12 +163,10 @@ class JoystickControllerInterface
 		{
 			joystick_->setRumble(which, command);
 		}
-
 		
 	protected:
 		hardware_interface::JoystickCommandHandle joystick_;
 		JoystickCIParams                          params_;
-		std::shared_ptr<dynamic_reconfigure::Server<joystick_controllers::JoystickConfigConfig>> srv_;
 
 };
 
