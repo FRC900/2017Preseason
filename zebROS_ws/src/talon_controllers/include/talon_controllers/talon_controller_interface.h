@@ -333,6 +333,10 @@ class TalonControllerInterface
 		{
 			return talon_.state()->getPosition();
 		}
+		double getVelocity(void) const
+		{
+			return talon_.state()->getSpeed();
+		}
 	protected:
 		hardware_interface::TalonCommandHandle talon_;
 		TalonCIParams                          params_;
